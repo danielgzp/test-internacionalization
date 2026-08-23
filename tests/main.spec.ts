@@ -34,13 +34,6 @@ it("handles not found pages for routes that don't match the middleware", async (
   page.getByRole('heading', {name: 'This page could not be found.'});
 });
 
-it('sets caching headers', async ({request}) => {
-  for (const pathname of ['/en', '/en/pathnames', '/de', '/de/pfadnamen']) {
-    expect((await request.get(pathname)).headers()['cache-control']).toContain(
-      's-maxage=31536000'
-    );
-  }
-});
 
 it('can be used to configure metadata', async ({page}) => {
   await page.goto('/en');

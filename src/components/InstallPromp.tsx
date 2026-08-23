@@ -8,6 +8,12 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{outcome: 'accepted' | 'dismissed'}>;
 }
 
+declare global {
+  interface Window {
+    deferredPWAInstallPrompt?: BeforeInstallPromptEvent;
+  }
+}
+
 const TOAST_ID = 'pwa-install-toast';
 
 export function InstallPrompt() {
@@ -31,13 +37,7 @@ export function InstallPrompt() {
       return;
     }
 
-    let promptCaptured = false;
-
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      promptCaptured = true;
-      const deferredPrompt = e as BeforeInstallPromptEvent;
-
+    const showInstallToast = (promptEvent: BeforeInstallPromptEvent) => {
       toast.info('¿Instalar Aplicación?', {
         id: TOAST_ID,
         description:
@@ -45,11 +45,12 @@ export function InstallPrompt() {
         action: {
           label: 'Instalar',
           onClick: () => {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(() => {
+            promptEvent.prompt();
+            promptEvent.userChoice.then(() => {
               toast.success('¡Gracias por instalar la aplicación!', {
                 id: TOAST_ID
               });
+              delete window.deferredPWAInstallPrompt;
             });
           }
         },
@@ -57,9 +58,25 @@ export function InstallPrompt() {
       });
     };
 
+    let promptCaptured = false;
+
+    // Check if event was captured before component hydration
+    if (window.deferredPWAInstallPrompt) {
+      promptCaptured = true;
+      showInstallToast(window.deferredPWAInstallPrompt);
+    }
+
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      promptCaptured = true;
+      const deferredPrompt = e as BeforeInstallPromptEvent;
+      window.deferredPWAInstallPrompt = deferredPrompt;
+      showInstallToast(deferredPrompt);
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Fallback for Android or other browsers if beforeinstallprompt doesn't fire automatically
+    // Fallback for Android or Desktop if beforeinstallprompt doesn't fire automatically
     const timer = setTimeout(() => {
       if (!promptCaptured && isAndroid) {
         toast.info('Instalar Aplicación', {
@@ -69,7 +86,7 @@ export function InstallPrompt() {
           duration: 10000
         });
       }
-    }, 1000);
+    }, 1200);
 
     return () => {
       window.removeEventListener(
