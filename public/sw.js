@@ -1,8 +1,30 @@
-const CACHE_NAME = 'next-intl-pwa-v1';
-const PRECACHE_ASSETS = [
-  '/',
-  '/manifest.webmanifest'
+const CACHE_NAME = 'next-intl-pwa-v2';
+
+// 1. Assets precacheados al instalar la PWA
+const PRECACHE_ASSETS = ['/', '/manifest.webmanifest'];
+
+// 2. Arreglo de extensiones de archivos estáticos
+const STATIC_EXTENSIONS = [
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.svg',
+  '.ico',
+  '.webp',
+  '.woff2',
+  '.woff',
+  '.ttf',
+  '.css',
+  '.js',
+  '.json',
+  '.webmanifest'
 ];
+
+// 3. Arreglo de rutas estáticas locales
+const STATIC_PATH_PREFIXES = ['/_next/static', '/icons'];
+
+// 4. Arreglo de dominios externos de recursos estáticos (ej. fuentes)
+const EXTERNAL_STATIC_HOSTS = ['fonts.gstatic.com', 'fonts.googleapis.com'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -34,7 +56,7 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Network-first strategy for navigation requests
+  // Navegación (HTML pages) -> Network-First (con fallback a caché para offline)
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -55,15 +77,26 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first / Stale-while-revalidate for static assets
-  if (
-    url.origin === location.origin &&
-    (url.pathname.startsWith('/_next/static') ||
-      url.pathname.startsWith('/icons') ||
-      url.pathname.endsWith('.png') ||
-      url.pathname.endsWith('.svg') ||
-      url.pathname.endsWith('.ico'))
-  ) {
+  // Comprobar si la petición pertenece a un asset estático utilizando los arreglos
+  const isSameOrigin = url.origin === location.origin;
+
+  const isStaticPrefix =
+    isSameOrigin &&
+    STATIC_PATH_PREFIXES.some((prefix) => url.pathname.startsWith(prefix));
+
+  const isStaticExtension =
+    isSameOrigin &&
+    STATIC_EXTENSIONS.some((ext) => url.pathname.endsWith(ext));
+
+  const isExternalStaticHost = EXTERNAL_STATIC_HOSTS.some((host) =>
+    url.hostname.includes(host)
+  );
+
+  const isStaticAsset =
+    isStaticPrefix || isStaticExtension || isExternalStaticHost;
+
+  // Cachear ÚNICAMENTE archivos estáticos / assets
+  if (isStaticAsset) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
         const fetchPromise = fetch(event.request).then((networkResponse) => {
@@ -81,3 +114,5 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+
