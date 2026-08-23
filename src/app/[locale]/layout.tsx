@@ -24,7 +24,11 @@ export function generateStaticParams() {
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const t = await getTranslations('LocaleLayout');
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const vercelUrl =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (vercelUrl ? `https://${vercelUrl}` : 'http://localhost:3000');
 
   return {
     metadataBase: new URL(baseUrl),
@@ -42,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
       type: 'website',
       images: [
         {
-          url: '/icons/logo.png',
+          url: '/icons/icon-512x512.png',
           width: 512,
           height: 512,
           alt: t('title')
@@ -50,10 +54,10 @@ export async function generateMetadata(): Promise<Metadata> {
       ]
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title: t('title'),
       description: t('description'),
-      images: ['/icons/logo.png']
+      images: ['/icons/icon-512x512.png']
     },
     icons: {
       icon: '/favicon.ico',
