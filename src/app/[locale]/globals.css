@@ -6,5 +6,4 @@ html,
 body {
   background-color: #101e33;
   color: #ffffff;
-  overscroll-behavior-y: contain;
 }
