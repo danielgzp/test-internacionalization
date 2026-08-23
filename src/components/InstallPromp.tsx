@@ -18,61 +18,13 @@ const TOAST_ID = 'pwa-install-toast';
 
 export function InstallPrompt() {
   useEffect(() => {
-    const userAgent = navigator.userAgent;
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !('MSStream' in window);
-    const isStandalone = window.matchMedia(
-      '(display-mode: standalone)'
-    ).matches;
-
-    // Enable pull-to-refresh gesture for iOS standalone mode
-    if (isIOS && isStandalone) {
-      let startY = 0;
-      let pulling = false;
-
-      const handleTouchStart = (e: TouchEvent) => {
-        if (window.scrollY === 0) {
-          startY = e.touches[0].clientY;
-          pulling = true;
-        }
-      };
-
-      const handleTouchMove = (e: TouchEvent) => {
-        if (!pulling) return;
-        const currentY = e.touches[0].clientY;
-        const diff = currentY - startY;
-
-        if (diff > 85 && window.scrollY === 0) {
-          pulling = false;
-          toast.info('Actualizando...', {
-            id: 'ios-refresh-toast',
-            duration: 1500
-          });
-          setTimeout(() => {
-            window.location.reload();
-          }, 300);
-        }
-      };
-
-      const handleTouchEnd = () => {
-        pulling = false;
-      };
-
-      window.addEventListener('touchstart', handleTouchStart, {passive: true});
-      window.addEventListener('touchmove', handleTouchMove, {passive: true});
-      window.addEventListener('touchend', handleTouchEnd, {passive: true});
-
-      return () => {
-        window.removeEventListener('touchstart', handleTouchStart);
-        window.removeEventListener('touchmove', handleTouchMove);
-        window.removeEventListener('touchend', handleTouchEnd);
-      };
-    }
-
     // Don't show install toast if app is already running in standalone mode (installed)
-    if (isStandalone) {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
       return;
     }
 
+    const userAgent = navigator.userAgent;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !('MSStream' in window);
     const isAndroid = /Android/i.test(userAgent);
 
     if (isIOS) {
